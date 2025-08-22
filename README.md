@@ -1,12 +1,143 @@
-# React + Vite
+# TODO List
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Современное приложение для управления задачами, созданное на React с использованием Tailwind CSS.
 
-Currently, two official plugins are available:
+## Демо
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+🔗 **[Посмотреть демо](https://timbelong.github.io/to-do-list/)**
 
-## Expanding the ESLint configuration
+## Функционал
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+- ✅ Добавление новых задач
+- ✅ Отметка задач как выполненных
+- ✅ Удаление задач
+- ✅ Редактирование текста задач
+- ✅ Фильтрация: все / активные / выполненные
+- ✅ Счетчик активных задач
+- ✅ Очистка всех выполненных задач
+- ✅ Адаптивный дизайн
+- ✅ Плавные анимации
+
+## Технологии
+
+- **React 19.1.1** - библиотека для создания пользовательских интерфейсов
+- **Vite 7.1.2** - инструмент сборки
+- **Tailwind CSS 4.1.12** - CSS фреймворк для стилизации
+- **Lucide React** - набор иконок
+- **GitHub Pages** - хостинг
+
+## Установка и запуск
+
+### Предварительные требования
+
+- Node.js (версия 18 или выше)
+- npm или yarn
+
+### Клонирование репозитория
+
+```bash
+git clone https://github.com/TimBelong/to-do-list.git
+cd to-do-list
+```
+
+### Установка зависимостей
+
+```bash
+npm install
+```
+
+### Запуск в режиме разработки
+
+```bash
+npm run dev
+```
+
+Приложение будет доступно по адресу `http://localhost:5173`
+
+### Сборка для продакшена
+
+```bash
+npm run build
+```
+
+### Предварительный просмотр сборки
+
+```bash
+npm run preview
+```
+
+## Структура проекта
+
+```
+to-do-list/
+├── public/
+├── src/
+│   ├── App.jsx          # Основной компонент приложения
+│   ├── main.jsx         # Точка входа
+│   └── index.css        # Стили Tailwind CSS
+├── .github/
+│   └── workflows/
+│       └── deploy.yml   # GitHub Actions для автодеплоя
+├── index.html
+├── package.json
+├── tailwind.config.js
+├── vite.config.js
+└── README.md
+```
+
+## Особенности реализации
+
+### Управление состоянием
+Приложение использует React hooks (`useState`) для управления состоянием:
+- `tasks` - массив всех задач
+- `newTask` - текст новой задачи
+- `filter` - текущий фильтр (all/active/completed)
+- `editingId` - ID редактируемой задачи
+- `editText` - текст редактируемой задачи
+
+### Фильтрация задач
+Реализована фильтрация по трем категориям:
+- **Все** - показывает все задачи
+- **Активные** - только невыполненные задачи
+- **Выполненные** - только завершенные задачи
+
+### Дизайн
+- Современный glassmorphism эффект
+- Градиентные фоны и кнопки
+- Плавные анимации при взаимодействии
+- Адаптивная верстка для всех устройств
+
+## Автоматический деплой
+
+Проект настроен для автоматического деплоя на GitHub Pages через GitHub Actions. При каждом push в ветку `main` происходит:
+
+1. Установка зависимостей
+2. Сборка проекта
+3. Деплой на GitHub Pages
+
+## Разработка
+
+### Добавление новых функций
+
+1. Создайте новую ветку: `git checkout -b feature/new-feature`
+2. Внесите изменения
+3. Закоммитьте: `git commit -m "Add new feature"`
+4. Запушьте: `git push origin feature/new-feature`
+5. Создайте Pull Request
+
+### Стилизация
+
+Проект использует Tailwind CSS v4. Основные классы:
+- `bg-gradient-to-br` - градиентные фоны
+- `backdrop-blur-sm` - эффект размытия
+- `rounded-3xl` - закругленные углы
+- `shadow-2xl` - тени
+- `transition-all` - плавные переходы
+
+## Лицензия
+
+Проект создан в образовательных целях.
+
+## Автор
+
+[TimBelong](https://github.com/TimBelong)
