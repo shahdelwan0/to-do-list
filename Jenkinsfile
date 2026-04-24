@@ -8,10 +8,6 @@ pipeline {
 
         APP_PORT = '8081'
         APP_NAME = 'todo_app'
-
-        SLACK_WEBHOOK = credentials('slack-webhook-url')
-        TELEGRAM_BOT_TOKEN = credentials('telegram-bot-token')
-        TELEGRAM_CHAT_ID = credentials('telegram-chat-id')
     }
 
     stages {
@@ -26,31 +22,31 @@ pipeline {
         stage('Build the docker image') {
             steps {
                 echo '2. Building Docker image...'
-                script {
-                    def image =docker.build("${DOCKER_IMAGE}", "-t ${DOCKER_IMAGE}:${DOCKER_TAG} .")
-                    docker.image("${DOCKER_IMAGE}:${DOCKER_TAG}").tag("${DOCKER_IMAGE}:latest")
-                }
+                sh """
+                    docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} .
+                    docker tag ${DOCKER_IMAGE}:${DOCKER_TAG} ${DOCKER_IMAGE}:latest
+                """
             }
         }
         
         stage('Deploy') {
             steps {
                 echo '3. Deploying container...'
+                sh """
+                    docker stop ${APP_NAME} || true
+                    docker rm ${APP_NAME} || true
+
+                    docker run -d \
+                        --name ${APP_NAME} \
+                        -p ${APP_PORT}:80 \
+                        --restart unless-stopped \
+                        --label "prometheus.scrape=true" \
+                        --label "prometheus.port=80" \
+                        --label "prometheus.path=/health" \
+                        ${DOCKER_IMAGE}:latest
+                """
+                
                 script {
-                    sh "docker stop ${APP_NAME} || true"
-                    sh "docker rm ${APP_NAME} || true"
-
-                    sh """
-                        docker run -d \
-                            --name ${APP_NAME} \
-                            -p ${APP_PORT}:80 \
-                            --restart unless-stopped \
-                            --label "prometheus.scrape=true" \
-                            --label "prometheus.port=80" \
-                            --label "prometheus.path=/health" \
-                            ${DOCKER_IMAGE}:latest
-                    """
-
                     timeout(time: 30, unit: 'SECONDS') {
                         waitUntil {
                             def status = sh(script: "docker inspect --format='{{.State.Health.Status}}' ${APP_NAME} 2>/dev/null || echo 'starting'", returnStdout: true).trim()
@@ -68,21 +64,19 @@ pipeline {
             }
             steps {
                 echo '4. Pushing image to Docker Hub...'
-                script {
-                    withCredentials([usernamePassword(
-                        credentialsId: 'docker-hub-credentials',
-                        usernameVariable: 'DOCKER_USER',
-                        passwordVariable: 'DOCKER_PASS'
-                    )]) {
-                        sh """
-                            echo "${DOCKER_PASS}" | docker login -u "${DOCKER_USER}" --password-stdin
-                            docker tag ${DOCKER_IMAGE}:latest ${DOCKER_REGISTRY}/${DOCKER_IMAGE}:${DOCKER_TAG}
-                            docker tag ${DOCKER_IMAGE}:latest ${DOCKER_REGISTRY}/${DOCKER_IMAGE}:latest
-                            docker push ${DOCKER_REGISTRY}/${DOCKER_IMAGE}:${DOCKER_TAG}
-                            docker push ${DOCKER_REGISTRY}/${DOCKER_IMAGE}:latest
-                            docker logout
-                        """
-                    }
+                withCredentials([usernamePassword(
+                    credentialsId: 'docker-hub-credentials',
+                    usernameVariable: 'DOCKER_USER',
+                    passwordVariable: 'DOCKER_PASS'
+                )]) {
+                    sh """
+                        echo "${DOCKER_PASS}" | docker login -u "${DOCKER_USER}" --password-stdin
+                        docker tag ${DOCKER_IMAGE}:${DOCKER_TAG} ${DOCKER_REGISTRY}/${DOCKER_IMAGE}:${DOCKER_TAG}
+                        docker tag ${DOCKER_IMAGE}:${DOCKER_TAG} ${DOCKER_REGISTRY}/${DOCKER_IMAGE}:latest
+                        docker push ${DOCKER_REGISTRY}/${DOCKER_IMAGE}:${DOCKER_TAG}
+                        docker push ${DOCKER_REGISTRY}/${DOCKER_IMAGE}:latest
+                        docker logout
+                    """
                 }
             }
         }
@@ -92,25 +86,30 @@ pipeline {
         success {
             echo 'Pipeline completed successfully!'
             script {
-                // Telegram notification
-                withCredentials([
-                    string(credentialsId: 'telegram-bot-token', variable: 'TOKEN'),
-                    string(credentialsId: 'telegram-chat-id', variable: 'CHAT_ID')
-                ]) {
-                    sh """
-                        curl -s -X POST https://api.telegram.org/bot\${TOKEN}/sendMessage \
-                            -d chat_id=\${CHAT_ID} \
-                            -d text="Build #${env.BUILD_NUMBER} SUCCEEDED!\\nApp: http://localhost:${APP_PORT}"
-                    """
+                try {
+                    withCredentials([string(credentialsId: 'telegram_bot_token', variable: 'TOKEN')]) {
+                        withCredentials([string(credentialsId: 'telegram_chat_id', variable: 'CHAT_ID')]) {
+                            sh """
+                                curl -s -X POST https://api.telegram.org/bot\${TOKEN}/sendMessage \
+                                    -d chat_id=\${CHAT_ID} \
+                                    -d text="Build #${env.BUILD_NUMBER} SUCCEEDED!\\nApp: http://localhost:${APP_PORT}"
+                            """
+                        }
+                    }
+                } catch(Exception e) {
+                    echo "Telegram notification failed: ${e.getMessage()}"
                 }
                 
-                // Slack notification
-                withCredentials([string(credentialsId: 'slack-webhook-url', variable: 'SLACK_URL')]) {
-                    sh """
-                        curl -X POST -H 'Content-type: application/json' \
-                            --data '{"text":"Build #${env.BUILD_NUMBER} succeeded! App ready at http://localhost:${APP_PORT}"}' \
-                            \${SLACK_URL}
-                    """
+                try {
+                    withCredentials([string(credentialsId: 'slack_webhook_url', variable: 'SLACK_URL')]) {
+                        sh """
+                            curl -X POST -H 'Content-type: application/json' \
+                                --data '{"text":"Build #${env.BUILD_NUMBER} succeeded! App ready at http://localhost:${APP_PORT}"}' \
+                                \${SLACK_URL}
+                        """
+                    }
+                } catch(Exception e) {
+                    echo "Slack notification failed: ${e.getMessage()}"
                 }
             }
         }
@@ -118,24 +117,30 @@ pipeline {
         failure {
             echo 'Pipeline failed!'
             script {
-                withCredentials([
-                    string(credentialsId: 'telegram-bot-token', variable: 'TOKEN'),
-                    string(credentialsId: 'telegram-chat-id', variable: 'CHAT_ID')
-                ]) {
-                    sh """
-                        curl -s -X POST https://api.telegram.org/bot\${TOKEN}/sendMessage \
-                            -d chat_id=\${CHAT_ID} \
-                            -d text="Build #${env.BUILD_NUMBER} FAILED!\\nCheck: ${env.BUILD_URL}"
-                    """
+                try {
+                    withCredentials([string(credentialsId: 'telegram_bot_token', variable: 'TOKEN')]) {
+                        withCredentials([string(credentialsId: 'telegram_chat_id', variable: 'CHAT_ID')]) {
+                            sh """
+                                curl -s -X POST https://api.telegram.org/bot\${TOKEN}/sendMessage \
+                                    -d chat_id=\${CHAT_ID} \
+                                    -d text="Build #${env.BUILD_NUMBER} FAILED!\\nCheck: ${env.BUILD_URL}"
+                            """
+                        }
+                    }
+                } catch(Exception e) {
+                    echo "Telegram notification failed: ${e.getMessage()}"
                 }
                 
-                // Slack failure notification
-                withCredentials([string(credentialsId: 'slack-webhook-url', variable: 'SLACK_URL')]) {
-                    sh """
-                        curl -X POST -H 'Content-type: application/json' \
-                            --data '{"text":"Build #${env.BUILD_NUMBER} FAILED! See ${env.BUILD_URL}"}' \
-                            \${SLACK_URL}
-                    """
+                try {
+                    withCredentials([string(credentialsId: 'slack_webhook_url', variable: 'SLACK_URL')]) {
+                        sh """
+                            curl -X POST -H 'Content-type: application/json' \
+                                --data '{"text":"Build #${env.BUILD_NUMBER} FAILED! See ${env.BUILD_URL}"}' \
+                                \${SLACK_URL}
+                        """
+                    }
+                } catch(Exception e) {
+                    echo "Slack notification failed: ${e.getMessage()}"
                 }
             }
         }
@@ -143,7 +148,7 @@ pipeline {
         always {
             echo 'Pipeline execution finished'
             sh '''
-                docker image prune -f
+                docker image prune -f || true
                 docker images ${DOCKER_IMAGE} --format "{{.Tag}}" | grep -E '^[0-9]+$' | sort -rn | tail -n +6 | xargs -r docker rmi 2>/dev/null || true
             '''
         }
