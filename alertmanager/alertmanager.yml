@@ -11,7 +11,7 @@ route:
 receivers:
   - name: all-channels
     slack_configs:
-      - api_url: "${SLACK_WEBHOOK_URL}"
+      - api_url: "__SLACK_WEBHOOK_URL__"
         channel: "#all-shahd"
         username: "Alertmanager"
         send_resolved: true
@@ -19,8 +19,8 @@ receivers:
         text: "{{ range .Alerts }}{{ .Annotations.summary }}\n{{ .Annotations.description }}\n{{ end }}"
 
     telegram_configs:
-      - bot_token: "${TELEGRAM_BOT_TOKEN}"
-        chat_id: ${TELEGRAM_CHAT_ID}
+      - bot_token: "__TELEGRAM_BOT_TOKEN__"
+        chat_id: __TELEGRAM_CHAT_ID__
         parse_mode: "HTML"
         send_resolved: true
         message: "<b>[{{ .Status | toUpper }}]</b> {{ .CommonLabels.alertname }}\n{{ range .Alerts }}{{ .Annotations.summary }}\n{{ .Annotations.description }}\n{{ end }}"
