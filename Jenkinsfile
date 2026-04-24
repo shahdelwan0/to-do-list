@@ -8,6 +8,8 @@ pipeline {
 
         APP_PORT = '8082'
         APP_NAME = 'todo_app'
+        PROMETHEUS_PORT = '9091'
+        CADVISOR_PORT = '8085'
     }
 
     stages {
@@ -31,19 +33,12 @@ pipeline {
         
         stage('Deploy') {
             steps {
-                echo '3. Deploying container...'
+                echo '3. Deploying monitored stack...'
                 sh """
-                    docker stop ${APP_NAME} || true
-                    docker rm ${APP_NAME} || true
-
-                    docker run -d \
-                        --name ${APP_NAME} \
-                        -p ${APP_PORT}:80 \
-                        --restart unless-stopped \
-                        --label "prometheus.scrape=true" \
-                        --label "prometheus.port=80" \
-                        --label "prometheus.path=/health" \
-                        ${DOCKER_IMAGE}:latest
+                    export PROMETHEUS_PORT=${PROMETHEUS_PORT}
+                    export CADVISOR_PORT=${CADVISOR_PORT}
+                    docker compose down --remove-orphans || true
+                    docker compose up -d --build --force-recreate --remove-orphans todo-app prometheus alertmanager cadvisor
                 """
                 
                 script {
@@ -92,7 +87,7 @@ pipeline {
                             sh """
                                 curl -s -X POST https://api.telegram.org/bot\${TOKEN}/sendMessage \
                                     -d chat_id=\${CHAT_ID} \
-                                    -d text="Build #${env.BUILD_NUMBER} SUCCEEDED!\\nApp: http://localhost:${APP_PORT}"
+                                    -d text="Build #${env.BUILD_NUMBER} SUCCEEDED!\\nApp: http://localhost:${APP_PORT}\\nPrometheus: http://localhost:${PROMETHEUS_PORT}\\ncAdvisor: http://localhost:${CADVISOR_PORT}"
                             """
                         }
                     }
@@ -104,7 +99,7 @@ pipeline {
                     withCredentials([string(credentialsId: 'slack-webhook-url', variable: 'SLACK_URL')]) {
                         sh """
                             curl -X POST -H 'Content-type: application/json' \
-                                --data '{"text":"Build #${env.BUILD_NUMBER} succeeded! App ready at http://localhost:${APP_PORT}"}' \
+                                --data '{"text":"Build #${env.BUILD_NUMBER} succeeded! App: http://localhost:${APP_PORT} | Prometheus: http://localhost:${PROMETHEUS_PORT} | cAdvisor: http://localhost:${CADVISOR_PORT}"}' \
                                 \${SLACK_URL}
                         """
                     }

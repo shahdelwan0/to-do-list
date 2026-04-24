@@ -1,0 +1,39 @@
+groups:
+  - name: todo_app_alerts
+    interval: 30s
+    rules:
+      - alert: TodoAppDown
+        expr: up{job="todo-app"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Todo app is down"
+          description: "Prometheus cannot scrape todo-app for more than 1 minute."
+
+      - alert: CAdvisorDown
+        expr: up{job="cadvisor"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "cAdvisor is down"
+          description: "Prometheus cannot scrape cAdvisor for more than 1 minute."
+
+      - alert: TodoAppHighCPU
+        expr: sum(rate(container_cpu_usage_seconds_total{job="cadvisor",container_label_com_docker_compose_service="todo-app",image!=""}[5m])) > 0.8
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Todo app CPU is high"
+          description: "CPU usage for todo-app exceeded 80% of one core for 5 minutes."
+
+      - alert: TodoAppHighMemory
+        expr: sum(container_memory_working_set_bytes{job="cadvisor",container_label_com_docker_compose_service="todo-app",image!=""}) > 536870912
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Todo app memory is high"
+          description: "Memory working set for todo-app exceeded 512 MiB for 5 minutes."
