@@ -1,0 +1,24 @@
+version: '3.8'
+services:
+  todo-app:
+    build: .
+    ports:
+      - "8081:80"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    labels:
+      - "prometheus.scrape = true"
+      - "prometheus.port=80"
+      - "prometheus.path=/health"
+    networks:
+      - monitoring
+networks:
+  monitoring:
+    driver: bridge
+    
+  
