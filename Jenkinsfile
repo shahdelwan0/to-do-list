@@ -27,7 +27,7 @@ pipeline {
             steps {
                 echo '2. Building Docker image...'
                 script {
-                    def image = docker.build("${DOCKER_IMAGE}:${DOCKER_TAG}")
+                    def image =docker.build("${DOCKER_IMAGE}", "-t ${DOCKER_IMAGE}:${DOCKER_TAG} .")
                     docker.image("${DOCKER_IMAGE}:${DOCKER_TAG}").tag("${DOCKER_IMAGE}:latest")
                 }
             }
