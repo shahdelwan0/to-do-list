@@ -87,8 +87,8 @@ pipeline {
             echo 'Pipeline completed successfully!'
             script {
                 try {
-                    withCredentials([string(credentialsId: 'telegram_bot_token', variable: 'TOKEN')]) {
-                        withCredentials([string(credentialsId: 'telegram_chat_id', variable: 'CHAT_ID')]) {
+                    withCredentials([string(credentialsId: 'telegram-bot-token', variable: 'TOKEN')]) {
+                        withCredentials([string(credentialsId: 'telegram-chat-id', variable: 'CHAT_ID')]) {
                             sh """
                                 curl -s -X POST https://api.telegram.org/bot\${TOKEN}/sendMessage \
                                     -d chat_id=\${CHAT_ID} \
@@ -101,7 +101,7 @@ pipeline {
                 }
                 
                 try {
-                    withCredentials([string(credentialsId: 'slack_webhook_url', variable: 'SLACK_URL')]) {
+                    withCredentials([string(credentialsId: 'slack-webhook-url', variable: 'SLACK_URL')]) {
                         sh """
                             curl -X POST -H 'Content-type: application/json' \
                                 --data '{"text":"Build #${env.BUILD_NUMBER} succeeded! App ready at http://localhost:${APP_PORT}"}' \
@@ -118,8 +118,8 @@ pipeline {
             echo 'Pipeline failed!'
             script {
                 try {
-                    withCredentials([string(credentialsId: 'telegram_bot_token', variable: 'TOKEN')]) {
-                        withCredentials([string(credentialsId: 'telegram_chat_id', variable: 'CHAT_ID')]) {
+                    withCredentials([string(credentialsId: 'telegram-bot-token', variable: 'TOKEN')]) {
+                        withCredentials([string(credentialsId: 'telegram-chat-id', variable: 'CHAT_ID')]) {
                             sh """
                                 curl -s -X POST https://api.telegram.org/bot\${TOKEN}/sendMessage \
                                     -d chat_id=\${CHAT_ID} \
@@ -132,7 +132,7 @@ pipeline {
                 }
                 
                 try {
-                    withCredentials([string(credentialsId: 'slack_webhook_url', variable: 'SLACK_URL')]) {
+                    withCredentials([string(credentialsId: 'slack-webhook-url', variable: 'SLACK_URL')]) {
                         sh """
                             curl -X POST -H 'Content-type: application/json' \
                                 --data '{"text":"Build #${env.BUILD_NUMBER} FAILED! See ${env.BUILD_URL}"}' \
