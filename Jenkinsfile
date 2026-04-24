@@ -6,7 +6,7 @@ pipeline {
         DOCKER_TAG = "${env.BUILD_NUMBER}"
         DOCKER_REGISTRY = 'shahdelwan'
 
-        APP_PORT = '8081'
+        APP_PORT = '8082'
         APP_NAME = 'todo_app'
     }
 
