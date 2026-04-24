@@ -45,7 +45,7 @@ pipeline {
                   --label "prometheus.scrape=true" \
                   --label "prometheus.port=80" \
                   --label "prometheus.path=/health" \
-                    to-do-list_todo-app:latest
+                    todo-app:latest
                """
 
               timeout(time: 30, unit: 'SECONDS') {
