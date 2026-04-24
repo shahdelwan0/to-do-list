@@ -2,7 +2,7 @@ pipeline {
   agent any
 
   environment {
-    DOCKER_IMAGE = 'to-do-list_todo-app:latest'
+    DOCKER_IMAGE = 'todo-app:latest'
     DOCKER_TAG = "${env.BUILD_NUMBER}"
     DOCKER_REGISTRY = 'shahdelwan'
 
