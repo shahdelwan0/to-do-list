@@ -2,12 +2,12 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_IMAGE = 'todo-app'
+        DOCKER_IMAGE = 'todo_app'
         DOCKER_TAG = "${env.BUILD_NUMBER}"
         DOCKER_REGISTRY = 'shahdelwan'
 
         APP_PORT = '8081'
-        APP_NAME = 'todo-app'
+        APP_NAME = 'todo_app'
 
         SLACK_WEBHOOK = credentials('slack-webhook-url')
         TELEGRAM_BOT_TOKEN = credentials('telegram-bot-token')
